@@ -3,20 +3,23 @@ local M = {}
 M.defaults = {
   cmd = { "claude" },
   float = {
-    width = 0.85,
-    height = 0.85,
-    border = "rounded",
+    width = 1.0,
+    height = 1.0,
+    border = "none",
     title_pos = "center",
     winblend = 0,
   },
   keymaps = {
-    prefix = "<leader>a",
+    prefix = "<leader>c",
     new = "n",
     toggle = "a",
     switch = "s",
     kill = "k",
     list = "l",
     rename = "r",
+    next = "]",
+    prev = "[",
+    resume = "h",
   },
   auto_insert = true,
 }

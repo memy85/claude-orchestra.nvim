@@ -1,4 +1,5 @@
 local session = require("claude-orchestra.session")
+local telescope = require("claude-orchestra.telescope")
 
 local M = {}
 
@@ -12,6 +13,11 @@ function M.pick(on_choice)
   local sessions = session.list()
   if #sessions == 0 then
     vim.notify("claude-orchestra: no sessions yet — `:ClaudeNew`", vim.log.levels.INFO)
+    return
+  end
+
+  if telescope.available() then
+    telescope.pick()
     return
   end
 

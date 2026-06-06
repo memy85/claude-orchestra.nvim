@@ -6,7 +6,21 @@ local M = {}
 
 function M.new(name) return session.create(name) end
 
+function M.resume(id, name)
+  if not id or id == "" then
+    require("claude-orchestra.telescope").pick_resume()
+    return
+  end
+  local base = vim.deepcopy(config.options.cmd)
+  table.insert(base, "--resume")
+  table.insert(base, id)
+  return session.create(name, { cmd = base })
+end
+
 function M.toggle() session.toggle() end
+
+function M.next() session.cycle(1) end
+function M.prev() session.cycle(-1) end
 
 function M.switch(name)
   if name and name ~= "" then return session.switch(name) end
@@ -62,6 +76,9 @@ function M.setup(opts)
   map(keys.kill, function() M.kill() end, "Claude: kill session")
   map(keys.list, M.list, "Claude: list sessions")
   map(keys.rename, function() M.rename() end, "Claude: rename current session")
+  map(keys.next, M.next, "Claude: next session")
+  map(keys.prev, M.prev, "Claude: previous session")
+  map(keys.resume, function() M.resume() end, "Claude: resume previous session")
 end
 
 return M

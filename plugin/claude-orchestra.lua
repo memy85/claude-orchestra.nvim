@@ -29,3 +29,6 @@ cmd("ClaudeKill", function(o) require("claude-orchestra").kill(o.args) end, {
 })
 cmd("ClaudeRename", function(o) require("claude-orchestra").rename(o.args) end, { nargs = "?" })
 cmd("ClaudeList", function() require("claude-orchestra").list() end, {})
+cmd("ClaudeNext", function() require("claude-orchestra").next() end, {})
+cmd("ClaudePrev", function() require("claude-orchestra").prev() end, {})
+cmd("ClaudeResume", function(o) require("claude-orchestra").resume(o.args) end, { nargs = "?" })

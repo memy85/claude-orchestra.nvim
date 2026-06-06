@@ -46,11 +46,12 @@ end
 
 local function open_float(bufnr, title)
   local opts = config.options.float
+  local total_h = vim.o.lines - vim.o.cmdheight - (vim.o.laststatus > 0 and 1 or 0)
   local w = math.floor(vim.o.columns * opts.width)
-  local h = math.floor(vim.o.lines * opts.height)
-  local row = math.floor((vim.o.lines - h) / 2)
+  local h = math.floor(total_h * opts.height)
+  local row = math.floor((total_h - h) / 2)
   local col = math.floor((vim.o.columns - w) / 2)
-  local winid = vim.api.nvim_open_win(bufnr, true, {
+  local win_opts = {
     relative = "editor",
     width = w,
     height = h,
@@ -58,14 +59,18 @@ local function open_float(bufnr, title)
     col = col,
     style = "minimal",
     border = opts.border,
-    title = " " .. title .. " ",
-    title_pos = opts.title_pos,
-  })
+  }
+  if opts.border ~= "none" then
+    win_opts.title = " " .. title .. " "
+    win_opts.title_pos = opts.title_pos
+  end
+  local winid = vim.api.nvim_open_win(bufnr, true, win_opts)
   vim.wo[winid].winblend = opts.winblend
   return winid
 end
 
-function M.create(name)
+function M.create(name, opts)
+  opts = opts or {}
   name = name and name ~= "" and unique_name(name) or default_name()
 
   local bufnr = vim.api.nvim_create_buf(false, true)
@@ -73,7 +78,8 @@ function M.create(name)
 
   local winid = open_float(bufnr, name)
 
-  local job_id = vim.fn.termopen(config.options.cmd, {
+  local cmd = opts.cmd or config.options.cmd
+  local job_id = vim.fn.termopen(cmd, {
     on_exit = function()
       M.kill(name, true)
     end,
@@ -81,7 +87,7 @@ function M.create(name)
 
   if job_id <= 0 then
     vim.api.nvim_buf_delete(bufnr, { force = true })
-    vim.notify("claude-orchestra: failed to start `" .. table.concat(config.options.cmd, " ") .. "`", vim.log.levels.ERROR)
+    vim.notify("claude-orchestra: failed to start `" .. table.concat(cmd, " ") .. "`", vim.log.levels.ERROR)
     return nil
   end
 
@@ -109,14 +115,19 @@ end
 
 function M.is_visible(session)
   if not session then return false end
-  if session.winid and vim.api.nvim_win_is_valid(session.winid) then
-    return true
+  if not (session.winid and vim.api.nvim_win_is_valid(session.winid)) then
+    return false
   end
-  return false
+  local ok, buf_in_win = pcall(vim.api.nvim_win_get_buf, session.winid)
+  return ok and buf_in_win == session.bufnr
 end
 
 function M.show(session)
   if not session then return end
+  if not (session.bufnr and vim.api.nvim_buf_is_valid(session.bufnr)) then
+    vim.notify("claude-orchestra: session buffer is gone", vim.log.levels.WARN)
+    return
+  end
   if M.is_visible(session) then
     vim.api.nvim_set_current_win(session.winid)
   else
@@ -130,7 +141,7 @@ end
 
 function M.hide(session)
   if not session then return end
-  if session.winid and vim.api.nvim_win_is_valid(session.winid) then
+  if M.is_visible(session) then
     vim.api.nvim_win_close(session.winid, true)
   end
   session.winid = nil
@@ -146,6 +157,23 @@ function M.toggle(session)
   else
     M.show(session)
   end
+end
+
+function M.cycle(direction)
+  if #M._order == 0 then
+    vim.notify("claude-orchestra: no sessions", vim.log.levels.INFO)
+    return
+  end
+  local current = M.last_active()
+  local idx = 1
+  if current then
+    for i, n in ipairs(M._order) do
+      if n == current.name then idx = i break end
+    end
+  end
+  local n = #M._order
+  local next_idx = ((idx - 1 + direction) % n + n) % n + 1
+  M.switch(M._order[next_idx])
 end
 
 function M.switch(name)
@@ -177,7 +205,7 @@ function M.rename(old, new)
   end
   if M._last_active == old then M._last_active = new end
   pcall(vim.api.nvim_buf_set_name, s.bufnr, "claude://" .. new)
-  if M.is_visible(s) then
+  if M.is_visible(s) and config.options.float.border ~= "none" then
     pcall(vim.api.nvim_win_set_config, s.winid, { title = " " .. new .. " ", title_pos = config.options.float.title_pos })
   end
 end
