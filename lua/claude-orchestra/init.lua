@@ -17,6 +17,10 @@ function M.resume(id, name)
   return session.create(name, { cmd = base })
 end
 
+function M.resume_all()
+  require("claude-orchestra.telescope").pick_resume({ all = true })
+end
+
 function M.toggle() session.toggle() end
 
 function M.next() session.cycle(1) end

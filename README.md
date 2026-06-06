@@ -35,7 +35,8 @@ use {
 | `:ClaudeList` | Print the session list to `:messages`. |
 | `:ClaudeRename [name]` | Rename the active session. Prompts if no argument. |
 | `:ClaudeKill [name]` | Kill a session. Opens the picker if no argument. |
-| `:ClaudeResume [id]` | Resume a past session. Opens the history picker if no argument. |
+| `:ClaudeResume [id]` | Resume a past session for the current cwd. Opens the history picker if no argument. |
+| `:ClaudeResume!` | Resume picker across **all** past projects (shows cwd column). |
 
 ## Default keymaps
 
@@ -100,7 +101,7 @@ Set any keymap field to `false` (or `""`) to disable just that binding.
 
 `:ClaudeResume` (or `<leader>ch`) reads `~/.claude/projects/<encoded-cwd>/*.jsonl` — the on-disk transcripts maintained by the `claude` CLI — and shows them in a telescope picker sorted newest-first. Selecting one spawns `claude --resume <session-id>` in a new float.
 
-Only sessions whose recorded `cwd` matches Neovim's current working directory are listed (mirroring `claude --resume` behavior).
+By default, only sessions whose recorded `cwd` matches Neovim's current working directory are listed (mirroring `claude --resume` behavior). Use `:ClaudeResume!` to browse sessions from every project — useful when you started a session from a terminal in a different directory.
 
 ## Status
 

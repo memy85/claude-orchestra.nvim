@@ -1,12 +1,16 @@
 local M = {}
 
 local function encoded_cwd(cwd)
-  return (cwd:gsub("/", "-"))
+  return (cwd:gsub("[^A-Za-z0-9]", "-"))
 end
 
 function M.history_dir(cwd)
   cwd = cwd or vim.fn.getcwd()
   return vim.fn.expand("~/.claude/projects/" .. encoded_cwd(cwd))
+end
+
+function M.projects_root()
+  return vim.fn.expand("~/.claude/projects")
 end
 
 local function first_user_message(path)
@@ -65,9 +69,23 @@ function M.last_messages(path, n)
   return tail
 end
 
-function M.list(cwd)
-  local dir = M.history_dir(cwd)
-  if vim.fn.isdirectory(dir) == 0 then return {} end
+local function recorded_cwd(path)
+  local f = io.open(path, "r")
+  if not f then return nil end
+  for _ = 1, 100 do
+    local line = f:read("*l")
+    if not line then break end
+    local ok, obj = pcall(vim.json.decode, line)
+    if ok and obj and obj.cwd then
+      f:close()
+      return obj.cwd
+    end
+  end
+  f:close()
+  return nil
+end
+
+local function collect(dir)
   local files = vim.fn.glob(dir .. "/*.jsonl", false, true)
   local sessions = {}
   for _, path in ipairs(files) do
@@ -79,7 +97,30 @@ function M.list(cwd)
       mtime = stat and stat.mtime.sec or 0,
       size = stat and stat.size or 0,
       summary = first_user_message(path),
+      cwd = recorded_cwd(path),
     })
+  end
+  return sessions
+end
+
+function M.list(cwd)
+  local dir = M.history_dir(cwd)
+  if vim.fn.isdirectory(dir) == 0 then return {} end
+  local sessions = collect(dir)
+  table.sort(sessions, function(a, b) return a.mtime > b.mtime end)
+  return sessions
+end
+
+function M.list_all()
+  local root = M.projects_root()
+  if vim.fn.isdirectory(root) == 0 then return {} end
+  local sessions = {}
+  for _, sub in ipairs(vim.fn.glob(root .. "/*", false, true)) do
+    if vim.fn.isdirectory(sub) == 1 then
+      for _, s in ipairs(collect(sub)) do
+        table.insert(sessions, s)
+      end
+    end
   end
   table.sort(sessions, function(a, b) return a.mtime > b.mtime end)
   return sessions

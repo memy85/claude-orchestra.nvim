@@ -31,4 +31,10 @@ cmd("ClaudeRename", function(o) require("claude-orchestra").rename(o.args) end, 
 cmd("ClaudeList", function() require("claude-orchestra").list() end, {})
 cmd("ClaudeNext", function() require("claude-orchestra").next() end, {})
 cmd("ClaudePrev", function() require("claude-orchestra").prev() end, {})
-cmd("ClaudeResume", function(o) require("claude-orchestra").resume(o.args) end, { nargs = "?" })
+cmd("ClaudeResume", function(o)
+  if o.bang then
+    require("claude-orchestra").resume_all()
+  else
+    require("claude-orchestra").resume(o.args)
+  end
+end, { nargs = "?", bang = true })

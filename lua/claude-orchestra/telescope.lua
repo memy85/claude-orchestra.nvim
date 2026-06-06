@@ -108,25 +108,36 @@ function M.pick(opts)
   }):find()
 end
 
-local function resume_entry_maker(s)
-  local rel_cwd = vim.fn.fnamemodify(vim.fn.getcwd(), ":~")
-  local time = os.date("%m-%d %H:%M", s.mtime)
-  local summary = s.summary ~= "" and s.summary or "(no user message)"
-  if #summary > 70 then summary = summary:sub(1, 67) .. "..." end
-  local display = string.format("%s  %s", time, summary)
-  return {
-    value = s,
-    display = display,
-    ordinal = time .. " " .. summary .. " " .. s.id,
-  }
+local function resume_entry_maker(show_cwd)
+  return function(s)
+    local time = os.date("%m-%d %H:%M", s.mtime)
+    local summary = s.summary ~= "" and s.summary or "(no user message)"
+    local max_len = show_cwd and 50 or 70
+    if #summary > max_len then summary = summary:sub(1, max_len - 3) .. "..." end
+    local display
+    if show_cwd then
+      local cwd = s.cwd and vim.fn.fnamemodify(s.cwd, ":~") or "?"
+      if #cwd > 30 then cwd = "..." .. cwd:sub(-27) end
+      display = string.format("%s  %-30s  %s", time, cwd, summary)
+    else
+      display = string.format("%s  %s", time, summary)
+    end
+    return {
+      value = s,
+      display = display,
+      ordinal = time .. " " .. (s.cwd or "") .. " " .. summary .. " " .. s.id,
+    }
+  end
 end
 
 function M.pick_resume(opts)
   opts = opts or {}
   local history = require("claude-orchestra.history")
-  local sessions = history.list()
+  local all = opts.all == true
+  local sessions = all and history.list_all() or history.list()
   if #sessions == 0 then
-    vim.notify("claude-orchestra: no past sessions in " .. history.history_dir(), vim.log.levels.INFO)
+    local where = all and history.projects_root() or history.history_dir()
+    vim.notify("claude-orchestra: no past sessions in " .. where, vim.log.levels.INFO)
     return
   end
 
@@ -145,11 +156,13 @@ function M.pick_resume(opts)
     end,
   })
 
+  local title = all and "Resume Claude session (all projects)"
+    or ("Resume Claude session (" .. vim.fn.fnamemodify(vim.fn.getcwd(), ":~") .. ")")
   pickers.new(opts, {
-    prompt_title = "Resume Claude session (" .. vim.fn.fnamemodify(vim.fn.getcwd(), ":~") .. ")",
+    prompt_title = title,
     finder = finders.new_table({
       results = sessions,
-      entry_maker = resume_entry_maker,
+      entry_maker = resume_entry_maker(all),
     }),
     sorter = conf.generic_sorter(opts),
     previewer = previewer,
