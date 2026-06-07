@@ -69,9 +69,20 @@ local function open_float(bufnr, title)
   return winid
 end
 
+local function hide_all_visible()
+  for _, s in pairs(M._sessions) do
+    if s.winid and vim.api.nvim_win_is_valid(s.winid) then
+      pcall(vim.api.nvim_win_close, s.winid, true)
+      s.winid = nil
+    end
+  end
+end
+
 function M.create(name, opts)
   opts = opts or {}
   name = name and name ~= "" and unique_name(name) or default_name()
+
+  hide_all_visible()
 
   local bufnr = vim.api.nvim_create_buf(false, true)
   vim.bo[bufnr].bufhidden = "hide"
@@ -131,6 +142,12 @@ function M.show(session)
   if M.is_visible(session) then
     vim.api.nvim_set_current_win(session.winid)
   else
+    for _, other in pairs(M._sessions) do
+      if other ~= session and other.winid and vim.api.nvim_win_is_valid(other.winid) then
+        pcall(vim.api.nvim_win_close, other.winid, true)
+        other.winid = nil
+      end
+    end
     session.winid = open_float(session.bufnr, session.name)
   end
   M.mark_active(session.name)
