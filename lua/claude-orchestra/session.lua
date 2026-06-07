@@ -210,11 +210,29 @@ function M.rename(old, new)
   end
 end
 
+local function focus_non_claude_window(except_winid)
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if win ~= except_winid then
+      local cfg = vim.api.nvim_win_get_config(win)
+      if cfg.relative == "" then
+        local buf = vim.api.nvim_win_get_buf(win)
+        local n = vim.api.nvim_buf_get_name(buf)
+        if not n:match("^claude://") then
+          pcall(vim.api.nvim_set_current_win, win)
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
 function M.kill(name, from_exit)
   local s = M._sessions[name]
   if not s then return end
   if not from_exit and s.job_id then pcall(vim.fn.jobstop, s.job_id) end
   if s.winid and vim.api.nvim_win_is_valid(s.winid) then
+    focus_non_claude_window(s.winid)
     pcall(vim.api.nvim_win_close, s.winid, true)
   end
   if s.bufnr and vim.api.nvim_buf_is_valid(s.bufnr) then
