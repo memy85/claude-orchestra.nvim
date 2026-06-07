@@ -8,10 +8,12 @@ Requires Neovim 0.10+, the `claude` CLI on `$PATH`, and (optionally) [telescope.
 
 ```lua
 use {
-  "memy85/claude-orchestra.nvim",
+  "git@github.com:memy85/claude-orchestra.nvim.git",
   config = function() require("claude-orchestra").setup({}) end,
 }
 ```
+
+The repo is private — packer needs an SSH URL (the short `"memy85/claude-orchestra.nvim"` form uses HTTPS and will fail on headless servers without a GitHub credential helper). Make sure the host has an SSH key registered with GitHub before running `:PackerSync`.
 
 For local development with a working copy at `~/projects/claude-orchestra.nvim`:
 
@@ -19,7 +21,7 @@ For local development with a working copy at `~/projects/claude-orchestra.nvim`:
 use {
   vim.fn.isdirectory(vim.fn.expand("~/projects/claude-orchestra.nvim")) == 1
     and "~/projects/claude-orchestra.nvim"
-    or "memy85/claude-orchestra.nvim",
+    or "git@github.com:memy85/claude-orchestra.nvim.git",
   config = function() require("claude-orchestra").setup({}) end,
 }
 ```
@@ -32,7 +34,6 @@ use {
 | `:ClaudeToggle` | Show/hide the last-active session. |
 | `:ClaudeSwitch [name]` | Open the picker (telescope or `vim.ui.select`). With a name, switch directly. |
 | `:ClaudeNext` / `:ClaudePrev` | Cycle to the next/previous session in creation order. |
-| `:ClaudeList` | Print the session list to `:messages`. |
 | `:ClaudeRename [name]` | Rename the active session. Prompts if no argument. |
 | `:ClaudeKill [name]` | Kill a session. Opens the picker if no argument. |
 | `:ClaudeResume [id]` | Resume a past session for the current cwd. Opens the history picker if no argument. |
@@ -46,9 +47,8 @@ All under the `<leader>c` prefix (mnemonic: **C**laude).
 |------|--------|
 | `<leader>cn` | new session |
 | `<leader>ca` | toggle the last-active session |
-| `<leader>cs` | switch (picker) |
+| `<leader>cl` | switch (picker) |
 | `<leader>c]` / `<leader>c[` | next / previous session |
-| `<leader>cl` | list sessions |
 | `<leader>cr` | rename active session |
 | `<leader>ck` | kill (picker) |
 | `<leader>ch` | resume past session (history picker) |
@@ -84,9 +84,8 @@ require("claude-orchestra").setup({
     prefix = "<leader>c",
     new = "n",
     toggle = "a",
-    switch = "s",
+    switch = "l",
     kill = "k",
-    list = "l",
     rename = "r",
     next = "]",
     prev = "[",

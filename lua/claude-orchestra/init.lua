@@ -51,19 +51,6 @@ function M.rename(new_name)
   end
 end
 
-function M.list()
-  local sessions = session.list()
-  if #sessions == 0 then
-    print("claude-orchestra: no sessions")
-    return
-  end
-  print("claude-orchestra sessions:")
-  for _, s in ipairs(sessions) do
-    local marker = (session.last_active() and session.last_active().name == s.name) and "*" or " "
-    print(string.format("  %s %-24s  %s", marker, s.name, vim.fn.fnamemodify(s.cwd, ":~")))
-  end
-end
-
 function M.setup(opts)
   config.setup(opts)
 
@@ -78,7 +65,6 @@ function M.setup(opts)
   map(keys.toggle, M.toggle, "Claude: toggle session")
   map(keys.switch, function() M.switch() end, "Claude: switch session")
   map(keys.kill, function() M.kill() end, "Claude: kill session")
-  map(keys.list, M.list, "Claude: list sessions")
   map(keys.rename, function() M.rename() end, "Claude: rename current session")
   map(keys.next, M.next, "Claude: next session")
   map(keys.prev, M.prev, "Claude: previous session")
