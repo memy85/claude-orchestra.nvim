@@ -243,6 +243,9 @@ function M.kill(name, from_exit)
     if n == name then table.remove(M._order, i) break end
   end
   if M._last_active == name then M._last_active = nil end
+  if from_exit then
+    vim.schedule(function() pcall(vim.cmd, "mode") end)
+  end
 end
 
 return M
