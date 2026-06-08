@@ -66,6 +66,9 @@ local function open_float(bufnr, title)
   end
   local winid = vim.api.nvim_open_win(bufnr, true, win_opts)
   vim.wo[winid].winblend = opts.winblend
+  vim.wo[winid].wrap = true
+  vim.wo[winid].sidescrolloff = 0
+  vim.wo[winid].sidescroll = 0
   return winid
 end
 
