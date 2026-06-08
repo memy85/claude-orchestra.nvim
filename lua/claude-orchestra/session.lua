@@ -168,6 +168,7 @@ function M.hide(session)
   if not session then return end
   if M.is_visible(session) then
     vim.api.nvim_win_close(session.winid, true)
+    vim.schedule(function() pcall(vim.cmd, "redraw!") end)
   end
   session.winid = nil
 end
@@ -268,9 +269,7 @@ function M.kill(name, from_exit)
     if n == name then table.remove(M._order, i) break end
   end
   if M._last_active == name then M._last_active = nil end
-  if from_exit then
-    vim.schedule(function() pcall(vim.cmd, "mode") end)
-  end
+  vim.schedule(function() pcall(vim.cmd, "redraw!") end)
 end
 
 return M
