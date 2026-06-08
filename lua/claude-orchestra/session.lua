@@ -88,6 +88,13 @@ function M.create(name, opts)
   local bufnr = vim.api.nvim_create_buf(false, true)
   vim.bo[bufnr].bufhidden = "hide"
 
+  for _, mode in ipairs({ "n", "i", "t", "v" }) do
+    vim.keymap.set(mode, "<ScrollWheelLeft>", "<Nop>", { buffer = bufnr, silent = true })
+    vim.keymap.set(mode, "<ScrollWheelRight>", "<Nop>", { buffer = bufnr, silent = true })
+    vim.keymap.set(mode, "<S-ScrollWheelLeft>", "<Nop>", { buffer = bufnr, silent = true })
+    vim.keymap.set(mode, "<S-ScrollWheelRight>", "<Nop>", { buffer = bufnr, silent = true })
+  end
+
   local winid = open_float(bufnr, name)
 
   local cmd = opts.cmd or config.options.cmd
