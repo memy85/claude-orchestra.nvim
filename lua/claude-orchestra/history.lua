@@ -125,16 +125,19 @@ local function collect(dir)
   local files = vim.fn.glob(dir .. "/*.jsonl", false, true)
   local sessions = {}
   for _, path in ipairs(files) do
-    local id = vim.fn.fnamemodify(path, ":t:r")
-    local stat = vim.uv.fs_stat(path)
-    table.insert(sessions, {
-      id = id,
-      path = path,
-      mtime = stat and stat.mtime.sec or 0,
-      size = stat and stat.size or 0,
-      summary = session_summary(path),
-      cwd = recorded_cwd(path),
-    })
+    local summary = session_summary(path)
+    if summary ~= "" then
+      local id = vim.fn.fnamemodify(path, ":t:r")
+      local stat = vim.uv.fs_stat(path)
+      table.insert(sessions, {
+        id = id,
+        path = path,
+        mtime = stat and stat.mtime.sec or 0,
+        size = stat and stat.size or 0,
+        summary = summary,
+        cwd = recorded_cwd(path),
+      })
+    end
   end
   return sessions
 end
