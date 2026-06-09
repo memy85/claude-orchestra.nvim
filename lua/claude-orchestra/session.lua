@@ -100,7 +100,7 @@ function M.create(name, opts)
   local cmd = opts.cmd or config.options.cmd
   local job_id = vim.fn.termopen(cmd, {
     on_exit = function()
-      M.kill(name, true)
+      vim.schedule(function() M.kill(name, true) end)
     end,
   })
 
