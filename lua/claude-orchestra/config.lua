@@ -19,7 +19,6 @@ M.defaults = {
     next = "]",
     prev = "[",
     resume = "h",
-    grid = "g",
   },
   auto_insert = true,
 }

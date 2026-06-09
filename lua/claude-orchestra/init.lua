@@ -1,6 +1,5 @@
 local config = require("claude-orchestra.config")
 local session = require("claude-orchestra.session")
-local picker = require("claude-orchestra.picker")
 
 local M = {}
 
@@ -30,12 +29,12 @@ function M.prev() session.cycle(-1) end
 
 function M.switch(name)
   if name and name ~= "" then return session.switch(name) end
-  picker.pick(function(s) session.switch(s.name) end)
+  M.grid()
 end
 
 function M.kill(name)
   if name and name ~= "" then return session.kill(name) end
-  picker.pick(function(s) session.kill(s.name) end)
+  M.grid()
 end
 
 function M.rename(new_name)
@@ -71,7 +70,6 @@ function M.setup(opts)
   map(keys.next, M.next, "Claude: next session")
   map(keys.prev, M.prev, "Claude: previous session")
   map(keys.resume, function() M.resume() end, "Claude: resume previous session")
-  map(keys.grid, M.grid, "Claude: grid view")
 end
 
 return M

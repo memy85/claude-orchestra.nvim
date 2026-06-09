@@ -1,8 +1,8 @@
 # claude-orchestra.nvim
 
-Orchestrate multiple Claude Code CLI sessions inside Neovim. Spawn them in a fullscreen float, cycle between them, preview their transcripts with telescope, and resume past sessions.
+Orchestrate multiple Claude Code CLI sessions inside Neovim. Spawn them in a fullscreen float, switch between them through an expose-style grid view, and resume past sessions.
 
-Requires Neovim 0.10+, the `claude` CLI on `$PATH`, and (optionally) [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for the rich picker. Without telescope, the plugin falls back to `vim.ui.select`.
+Requires Neovim 0.10+, the `claude` CLI on `$PATH`, and (optionally) [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for the resume-history picker.
 
 ## Install (packer)
 
@@ -32,10 +32,11 @@ use {
 |---------|-------------|
 | `:ClaudeNew [name]` | Spawn a new `claude` session in a fullscreen float. Optionally name it. |
 | `:ClaudeToggle` | Show/hide the last-active session. |
-| `:ClaudeSwitch [name]` | Open the picker (telescope or `vim.ui.select`). With a name, switch directly. |
+| `:ClaudeGrid` | Open the expose-style grid of running sessions plus a `+ new` tile. |
+| `:ClaudeSwitch [name]` | Switch to a session by name. Without a name, opens the grid. |
 | `:ClaudeNext` / `:ClaudePrev` | Cycle to the next/previous session in creation order. |
 | `:ClaudeRename [name]` | Rename the active session. Prompts if no argument. |
-| `:ClaudeKill [name]` | Kill a session. Opens the picker if no argument. |
+| `:ClaudeKill [name]` | Kill a session by name. Without a name, opens the grid (use `x`/`dd` there). |
 | `:ClaudeResume [id]` | Resume a past session for the current cwd. Opens the history picker if no argument. |
 | `:ClaudeResume!` | Resume picker across **all** past projects (shows cwd column). |
 
@@ -47,19 +48,21 @@ All under the `<leader>c` prefix (mnemonic: **C**laude).
 |------|--------|
 | `<leader>cn` | new session |
 | `<leader>ca` | toggle the last-active session |
-| `<leader>cl` | switch (picker) |
+| `<leader>cl` | open the grid (switch / spawn / kill / rename from there) |
 | `<leader>c]` / `<leader>c[` | next / previous session |
 | `<leader>cr` | rename active session |
-| `<leader>ck` | kill (picker) |
+| `<leader>ck` | open the grid (kill from there with `x`/`dd`) |
 | `<leader>ch` | resume past session (history picker) |
 
-### Inside the switch picker (telescope)
+### Inside the grid
 
 | Keys | Action |
 |------|--------|
-| `<CR>` | switch to the highlighted session |
-| `<C-x>` (insert/normal) or `dd` (normal) | kill the highlighted session, list refreshes |
-| `<C-r>` (insert/normal) or `r` (normal) | rename the highlighted session inline |
+| `h`/`j`/`k`/`l` or arrows | move selection between tiles |
+| `<CR>` | switch to the highlighted session (or spawn a new one on `+ new`) |
+| `x` or `dd` | kill the highlighted session, grid refreshes |
+| `r` | rename the highlighted session |
+| `q` or `<Esc>` | dismiss the grid |
 
 ## Terminal-mode tip
 
