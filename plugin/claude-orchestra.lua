@@ -7,6 +7,7 @@ end
 
 cmd("ClaudeNew", function(o) require("claude-orchestra").new(o.args) end, { nargs = "?" })
 cmd("ClaudeToggle", function() require("claude-orchestra").toggle() end, {})
+cmd("ClaudeGrid", function() require("claude-orchestra").grid() end, {})
 cmd("ClaudeSwitch", function(o) require("claude-orchestra").switch(o.args) end, {
   nargs = "?",
   complete = function()

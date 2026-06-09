@@ -23,6 +23,8 @@ end
 
 function M.toggle() session.toggle() end
 
+function M.grid() require("claude-orchestra.grid").open() end
+
 function M.next() session.cycle(1) end
 function M.prev() session.cycle(-1) end
 
@@ -69,6 +71,7 @@ function M.setup(opts)
   map(keys.next, M.next, "Claude: next session")
   map(keys.prev, M.prev, "Claude: previous session")
   map(keys.resume, function() M.resume() end, "Claude: resume previous session")
+  map(keys.grid, M.grid, "Claude: grid view")
 end
 
 return M
