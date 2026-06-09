@@ -143,6 +143,10 @@ end
 function M.open()
   if M._state then M.close() end
 
+  for _, s in ipairs(session_mod.list()) do
+    if session_mod.is_visible(s) then session_mod.hide(s) end
+  end
+
   local sessions = session_mod.list()
   local items = {}
   for _, s in ipairs(sessions) do
