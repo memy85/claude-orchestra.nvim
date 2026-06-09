@@ -13,26 +13,62 @@ function M.projects_root()
   return vim.fn.expand("~/.claude/projects")
 end
 
-local function first_user_message(path)
-  local f = io.open(path, "r")
-  if not f then return "" end
-  for _ = 1, 50 do
-    local line = f:read("*l")
-    if not line then break end
-    local ok, obj = pcall(vim.json.decode, line)
-    if ok and obj and obj.type == "user" and obj.message then
-      local content = obj.message.content
-      if type(content) == "string" then
-        f:close()
-        return (content:gsub("\n", " "))
-      elseif type(content) == "table" and content[1] and content[1].text then
-        f:close()
-        return (content[1].text:gsub("\n", " "))
-      end
+local META_TAG_PREFIXES = {
+  "<local%-command%-caveat>",
+  "<local%-command%-stdout>",
+  "<command%-name>",
+  "<command%-message>",
+  "<command%-args>",
+  "<system%-reminder>",
+  "<bash%-input>",
+  "<bash%-stdout>",
+  "<bash%-stderr>",
+  "Caveat:",
+}
+
+local function looks_like_meta(text)
+  if not text or text == "" then return true end
+  local head = text:match("^%s*(.-)%s*$"):sub(1, 80)
+  for _, p in ipairs(META_TAG_PREFIXES) do
+    if head:match("^" .. p) then return true end
+  end
+  return false
+end
+
+local function extract_text(content)
+  if type(content) == "string" then return content end
+  if type(content) == "table" then
+    for _, part in ipairs(content) do
+      if part.type == "text" and part.text then return part.text end
+      if part.text then return part.text end
     end
   end
+  return nil
+end
+
+local function session_summary(path)
+  local f = io.open(path, "r")
+  if not f then return "" end
+  local custom_title, first_real
+  local count = 0
+  for line in f:lines() do
+    count = count + 1
+    if count > 500 then break end
+    local ok, obj = pcall(vim.json.decode, line)
+    if ok and obj then
+      if obj.type == "custom-title" and obj.customTitle and obj.customTitle ~= "" then
+        custom_title = obj.customTitle
+      elseif (not first_real) and obj.type == "user" and obj.message and not obj.isMeta then
+        local text = extract_text(obj.message.content)
+        if text and not looks_like_meta(text) then
+          first_real = (text:gsub("%s+", " "):gsub("^%s+", ""))
+        end
+      end
+    end
+    if custom_title and first_real then break end
+  end
   f:close()
-  return ""
+  return custom_title or first_real or ""
 end
 
 function M.last_messages(path, n)
@@ -96,7 +132,7 @@ local function collect(dir)
       path = path,
       mtime = stat and stat.mtime.sec or 0,
       size = stat and stat.size or 0,
-      summary = first_user_message(path),
+      summary = session_summary(path),
       cwd = recorded_cwd(path),
     })
   end
