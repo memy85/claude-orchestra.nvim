@@ -118,6 +118,18 @@ local function kill_selected()
   vim.schedule(function() M.open() end)
 end
 
+local function rename_selected()
+  if not M._state then return end
+  local tile = M._state.tiles[M._state.selected]
+  if not tile or tile.key == NEW_KEY then return end
+  local old = tile.name
+  M.close()
+  vim.ui.input({ prompt = "Rename `" .. old .. "` to: " }, function(input)
+    if input and input ~= "" then session_mod.rename(old, input) end
+    vim.schedule(function() M.open() end)
+  end)
+end
+
 local function set_tile_keymaps(bufnr)
   local opts = { buffer = bufnr, silent = true, nowait = true }
   local mappings = {
@@ -134,6 +146,7 @@ local function set_tile_keymaps(bufnr)
     ["<Esc>"]   = M.close,
     x          = kill_selected,
     dd         = kill_selected,
+    r          = rename_selected,
   }
   for lhs, rhs in pairs(mappings) do
     vim.keymap.set("n", lhs, rhs, opts)
