@@ -95,6 +95,13 @@ function M.create(name, opts)
     vim.keymap.set(mode, "<S-ScrollWheelRight>", "<Nop>", { buffer = bufnr, silent = true })
   end
 
+  vim.api.nvim_create_autocmd("BufLeave", {
+    buffer = bufnr,
+    callback = function()
+      vim.schedule(function() pcall(vim.cmd, "redraw!") end)
+    end,
+  })
+
   local winid = open_float(bufnr, name)
 
   local cmd = opts.cmd or config.options.cmd
