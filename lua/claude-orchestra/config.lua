@@ -2,13 +2,6 @@ local M = {}
 
 M.defaults = {
   cmd = { "claude" },
-  float = {
-    width = 1.0,
-    height = 1.0,
-    border = "none",
-    title_pos = "center",
-    winblend = 0,
-  },
   keymaps = {
     prefix = "<leader>c",
     new = "n",

@@ -1,6 +1,6 @@
 # claude-orchestra.nvim
 
-Orchestrate multiple Claude Code CLI sessions inside Neovim. Spawn them in a fullscreen float, switch between them through an expose-style grid view, and resume past sessions.
+Orchestrate multiple Claude Code CLI sessions inside Neovim. Each session lives in its own terminal buffer, switchable through an expose-style grid view, with resumption of past sessions.
 
 Requires Neovim 0.10+, the `claude` CLI on `$PATH`, and (optionally) [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for the resume-history picker.
 
@@ -30,7 +30,7 @@ use {
 
 | Command | Description |
 |---------|-------------|
-| `:ClaudeNew [name]` | Spawn a new `claude` session in a fullscreen float. Optionally name it. |
+| `:ClaudeNew [name]` | Spawn a new `claude` session in the current window. Optionally name it. |
 | `:ClaudeToggle` | Show/hide the last-active session. |
 | `:ClaudeGrid` | Open the expose-style grid of running sessions plus a `+ new` tile. |
 | `:ClaudeSwitch [name]` | Switch to a session by name. Without a name, opens the grid. |
@@ -66,7 +66,7 @@ All under the `<leader>c` prefix (mnemonic: **C**laude).
 
 ## Terminal-mode tip
 
-When you're inside a Claude float, you're in terminal-insert mode and most keymaps are swallowed. Press `<C-\><C-n>` to drop into terminal-normal mode, then the `<leader>c*` keymaps work.
+Inside a Claude session you're in terminal-insert mode and most keymaps are swallowed. Press `<C-\><C-n>` to drop into terminal-normal mode, then the `<leader>c*` keymaps (and ordinary window commands like `:vsplit`, `:Ex`) work.
 
 ## Configuration
 
@@ -75,13 +75,6 @@ When you're inside a Claude float, you're in terminal-insert mode and most keyma
 ```lua
 require("claude-orchestra").setup({
   cmd = { "claude" },              -- command used to launch a session
-  float = {
-    width = 1.0,                    -- 0–1 fraction of editor width
-    height = 1.0,                   -- 0–1 fraction of editor height (minus cmdline/statusline)
-    border = "none",                -- any nvim_open_win border style
-    title_pos = "center",           -- only used when border ~= "none"
-    winblend = 0,
-  },
   auto_insert = true,               -- enter terminal-insert mode after spawn/show
   keymaps = {
     prefix = "<leader>c",
@@ -101,7 +94,7 @@ Set any keymap field to `false` (or `""`) to disable just that binding.
 
 ## Resume
 
-`:ClaudeResume` (or `<leader>ch`) reads `~/.claude/projects/<encoded-cwd>/*.jsonl` — the on-disk transcripts maintained by the `claude` CLI — and shows them in a telescope picker sorted newest-first. Selecting one spawns `claude --resume <session-id>` in a new float.
+`:ClaudeResume` (or `<leader>ch`) reads `~/.claude/projects/<encoded-cwd>/*.jsonl` — the on-disk transcripts maintained by the `claude` CLI — and shows them in a telescope picker sorted newest-first. Selecting one spawns `claude --resume <session-id>` in the current window.
 
 By default, only sessions whose recorded `cwd` matches Neovim's current working directory are listed (mirroring `claude --resume` behavior). Use `:ClaudeResume!` to browse sessions from every project — useful when you started a session from a terminal in a different directory.
 
