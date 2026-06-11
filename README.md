@@ -36,7 +36,7 @@ use {
 | `:ClaudeSwitch [name]` | Switch to a session by name. Without a name, opens the grid. |
 | `:ClaudeNext` / `:ClaudePrev` | Cycle to the next/previous session in creation order. |
 | `:ClaudeRename [name]` | Rename the active session. Prompts if no argument. |
-| `:ClaudeKill [name]` | Kill a session by name. Without a name, opens the grid (use `x`/`dd` there). |
+| `:ClaudeKill [name]` | Kill a session by name. Without a name, kills the session of the current buffer (no-op if not in a claude buffer). |
 | `:ClaudeResume [id]` | Resume a past session for the current cwd. Opens the history picker if no argument. |
 | `:ClaudeResume!` | Resume picker across **all** past projects (shows cwd column). |
 
@@ -51,7 +51,7 @@ All under the `<leader>c` prefix (mnemonic: **C**laude).
 | `<leader>cl` | open the grid (switch / spawn / kill / rename from there) |
 | `<leader>c]` / `<leader>c[` | next / previous session |
 | `<leader>cr` | rename active session |
-| `<leader>ck` | open the grid (kill from there with `x`/`dd`) |
+| `<leader>ck` | kill the current claude session (or use `x`/`dd` inside the grid) |
 | `<leader>ch` | resume past session (history picker) |
 
 ### Inside the grid

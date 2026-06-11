@@ -1,4 +1,5 @@
 local session_mod = require("claude-orchestra.session")
+local config = require("claude-orchestra.config")
 
 local M = {}
 
@@ -12,35 +13,12 @@ local function shape(n)
   return rows, cols
 end
 
-local function snapshot(session, h, w)
+local function new_tile_lines(h, w)
   if h < 1 then return {} end
-  if not session then
-    local out = {}
-    for _ = 1, math.max(0, math.floor(h / 2) - 1) do table.insert(out, "") end
-    table.insert(out, string.rep(" ", math.max(0, math.floor((w - 17) / 2))) .. "[+ new session]")
-    table.insert(out, string.rep(" ", math.max(0, math.floor((w - 20) / 2))) .. "<CR> to spawn one")
-    return out
-  end
-  if not (session.bufnr and vim.api.nvim_buf_is_valid(session.bufnr)) then
-    return { "(buffer unavailable)" }
-  end
-  local total = vim.api.nvim_buf_line_count(session.bufnr)
-  local last_non_empty = total
-  while last_non_empty > 0 do
-    local l = vim.api.nvim_buf_get_lines(session.bufnr, last_non_empty - 1, last_non_empty, false)[1] or ""
-    if l:match("%S") then break end
-    last_non_empty = last_non_empty - 1
-  end
-  if last_non_empty == 0 then return { "(empty)" } end
-  local start = math.max(0, last_non_empty - h)
-  local body = vim.api.nvim_buf_get_lines(session.bufnr, start, last_non_empty, false)
   local out = {}
-  for _, line in ipairs(body) do
-    if vim.fn.strdisplaywidth(line) > w then
-      line = vim.fn.strcharpart(line, 0, w)
-    end
-    table.insert(out, line)
-  end
+  for _ = 1, math.max(0, math.floor(h / 2) - 1) do table.insert(out, "") end
+  table.insert(out, string.rep(" ", math.max(0, math.floor((w - 17) / 2))) .. "[+ new session]")
+  table.insert(out, string.rep(" ", math.max(0, math.floor((w - 20) / 2))) .. "<CR> to spawn one")
   return out
 end
 
@@ -56,14 +34,44 @@ local function highlight_selection()
   end
 end
 
+local TILE_KEYS = {
+  "h", "j", "k", "l",
+  "<Left>", "<Down>", "<Up>", "<Right>",
+  "<CR>", "q", "<Esc>",
+  "x", "dd", "r",
+  "i", "a", "I", "A", "o", "O", "c", "C", "s", "S",
+  "<leader>q",
+}
+
+local function clear_tile_keymaps(bufnr)
+  if not (bufnr and vim.api.nvim_buf_is_valid(bufnr)) then return end
+  for _, lhs in ipairs(TILE_KEYS) do
+    pcall(vim.keymap.del, "n", lhs, { buffer = bufnr })
+  end
+  local keys = config.options.keymaps
+  if keys.prefix and keys.rename and keys.rename ~= "" then
+    pcall(vim.keymap.del, "n", keys.prefix .. keys.rename, { buffer = bufnr })
+  end
+end
+
 function M.close()
   if not M._state then return end
+  for _, item in ipairs(M._state.restore_list or {}) do
+    if vim.api.nvim_win_is_valid(item.win) and item.session.bufnr
+        and vim.api.nvim_buf_is_valid(item.session.bufnr) then
+      pcall(vim.api.nvim_win_set_buf, item.win, item.session.bufnr)
+      session_mod.mark_active(item.session.name)
+    end
+  end
+  for _, bufnr in ipairs(M._state.session_bufs) do
+    clear_tile_keymaps(bufnr)
+  end
   for _, t in ipairs(M._state.tiles) do
     if t.winid and vim.api.nvim_win_is_valid(t.winid) then
       pcall(vim.api.nvim_win_close, t.winid, true)
     end
-    if t.bufnr and vim.api.nvim_buf_is_valid(t.bufnr) then
-      pcall(vim.api.nvim_buf_delete, t.bufnr, { force = true })
+    if t.owned_bufnr and vim.api.nvim_buf_is_valid(t.owned_bufnr) then
+      pcall(vim.api.nvim_buf_delete, t.owned_bufnr, { force = true })
     end
   end
   if M._state.bg_winid and vim.api.nvim_win_is_valid(M._state.bg_winid) then
@@ -113,9 +121,12 @@ local function kill_selected()
   if not M._state then return end
   local tile = M._state.tiles[M._state.selected]
   if not tile or tile.key == NEW_KEY then return end
-  session_mod.kill(tile.name)
+  local name = tile.name
   M.close()
-  vim.schedule(function() M.open() end)
+  vim.schedule(function()
+    session_mod.kill(name)
+    M.open()
+  end)
 end
 
 local function rename_selected()
@@ -132,6 +143,7 @@ end
 
 local function set_tile_keymaps(bufnr)
   local opts = { buffer = bufnr, silent = true, nowait = true }
+  local nop = function() end
   local mappings = {
     h = function() move("h") end,
     j = function() move("j") end,
@@ -147,9 +159,17 @@ local function set_tile_keymaps(bufnr)
     x          = kill_selected,
     dd         = kill_selected,
     r          = rename_selected,
+    i = nop, a = nop, I = nop, A = nop, o = nop, O = nop,
+    c = nop, C = nop, s = nop, S = nop,
+    ["<leader>q"] = nop,
   }
   for lhs, rhs in pairs(mappings) do
     vim.keymap.set("n", lhs, rhs, opts)
+  end
+
+  local keys = config.options.keymaps
+  if keys.prefix and keys.rename and keys.rename ~= "" then
+    vim.keymap.set("n", keys.prefix .. keys.rename, rename_selected, opts)
   end
 end
 
@@ -157,6 +177,25 @@ function M.open()
   if M._state then M.close() end
 
   local sessions = session_mod.list()
+
+  local restore_list = {}
+  for _, s in ipairs(sessions) do
+    if s.bufnr and vim.api.nvim_buf_is_valid(s.bufnr) then
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        if vim.api.nvim_win_get_buf(win) == s.bufnr then
+          table.insert(restore_list, { win = win, session = s })
+          local prev = s.prev_bufnr
+          if prev and vim.api.nvim_buf_is_valid(prev) then
+            pcall(vim.api.nvim_win_set_buf, win, prev)
+          else
+            local scratch = vim.api.nvim_create_buf(true, false)
+            pcall(vim.api.nvim_win_set_buf, win, scratch)
+          end
+        end
+      end
+    end
+  end
+
   local items = {}
   for _, s in ipairs(sessions) do
     table.insert(items, { key = s.name, name = s.name, session = s })
@@ -183,18 +222,25 @@ function M.open()
   vim.wo[bg_winid].winhl = "Normal:NormalFloat"
 
   local tiles = {}
+  local session_bufs = {}
   for i, item in ipairs(items) do
     local r = math.floor((i - 1) / cols)
     local c = (i - 1) % cols
     local y = pad + r * (tile_h + pad)
     local x = pad + c * (tile_w + pad)
 
-    local bufnr = vim.api.nvim_create_buf(false, true)
-    vim.bo[bufnr].bufhidden = "wipe"
-
-    local content = snapshot(item.session, tile_h - 2, tile_w - 2)
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, content)
-    vim.bo[bufnr].modifiable = false
+    local bufnr, owned_bufnr
+    if item.key == NEW_KEY then
+      bufnr = vim.api.nvim_create_buf(false, true)
+      vim.bo[bufnr].bufhidden = "wipe"
+      local lines = new_tile_lines(tile_h - 2, tile_w - 2)
+      vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+      vim.bo[bufnr].modifiable = false
+      owned_bufnr = bufnr
+    else
+      bufnr = item.session.bufnr
+      table.insert(session_bufs, bufnr)
+    end
 
     local title = item.key == NEW_KEY and " + new " or (" " .. item.name .. " ")
     local winid = vim.api.nvim_open_win(bufnr, false, {
@@ -207,8 +253,14 @@ function M.open()
     vim.wo[winid].cursorline = false
     vim.wo[winid].wrap = false
 
+    if item.key ~= NEW_KEY then
+      local line_count = vim.api.nvim_buf_line_count(bufnr)
+      pcall(vim.api.nvim_win_set_cursor, winid, { line_count, 0 })
+    end
+
     table.insert(tiles, {
-      key = item.key, name = item.name, bufnr = bufnr, winid = winid,
+      key = item.key, name = item.name, session = item.session,
+      bufnr = bufnr, owned_bufnr = owned_bufnr, winid = winid,
     })
 
     set_tile_keymaps(bufnr)
@@ -221,6 +273,8 @@ function M.open()
     rows = rows,
     cols = cols,
     selected = 1,
+    session_bufs = session_bufs,
+    restore_list = restore_list,
   }
 
   pcall(vim.api.nvim_set_current_win, tiles[1].winid)

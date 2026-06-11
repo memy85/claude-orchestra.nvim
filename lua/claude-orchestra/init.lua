@@ -34,7 +34,8 @@ end
 
 function M.kill(name)
   if name and name ~= "" then return session.kill(name) end
-  M.grid()
+  local cur = vim.api.nvim_buf_get_name(0):match("^claude://(.+)$")
+  if cur then session.kill(cur) end
 end
 
 function M.rename(new_name)
