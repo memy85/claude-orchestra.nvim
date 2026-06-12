@@ -6,6 +6,7 @@ local M = {}
 M._state = nil
 
 local NEW_KEY = "__new__"
+local REFRESH_MS = 500
 
 local function shape(n)
   local cols = math.max(1, math.ceil(math.sqrt(n)))
@@ -54,19 +55,41 @@ local function clear_tile_keymaps(bufnr)
   end
 end
 
+-- Copy the session's terminal buffer lines into the tile's snapshot
+-- scratch buffer. Trims trailing empty lines so the visible region
+-- shows the actual content rather than padding.
+local function refresh_snapshot(snapshot_buf, session)
+  if not (snapshot_buf and vim.api.nvim_buf_is_valid(snapshot_buf)) then return end
+  if not (session and session.bufnr and vim.api.nvim_buf_is_valid(session.bufnr)) then return end
+  local ok, lines = pcall(vim.api.nvim_buf_get_lines, session.bufnr, 0, -1, false)
+  if not ok or not lines then return end
+  local last = #lines
+  while last > 0 and lines[last] == "" do last = last - 1 end
+  if last < #lines then
+    local trimmed = {}
+    for i = 1, last do trimmed[i] = lines[i] end
+    lines = trimmed
+  end
+  vim.bo[snapshot_buf].modifiable = true
+  pcall(vim.api.nvim_buf_set_lines, snapshot_buf, 0, -1, false, lines)
+  vim.bo[snapshot_buf].modifiable = false
+end
+
+local function stop_timer()
+  if M._state and M._state.timer then
+    pcall(function() M._state.timer:stop() end)
+    pcall(function() M._state.timer:close() end)
+    M._state.timer = nil
+  end
+end
+
 function M.close()
   if not M._state then return end
-  for _, item in ipairs(M._state.restore_list or {}) do
-    if vim.api.nvim_win_is_valid(item.win) and item.session.bufnr
-        and vim.api.nvim_buf_is_valid(item.session.bufnr) then
-      pcall(vim.api.nvim_win_set_buf, item.win, item.session.bufnr)
-      session_mod.mark_active(item.session.name)
-    end
-  end
-  for _, bufnr in ipairs(M._state.session_bufs) do
-    clear_tile_keymaps(bufnr)
-  end
+  stop_timer()
   for _, t in ipairs(M._state.tiles) do
+    if t.owned_bufnr and vim.api.nvim_buf_is_valid(t.owned_bufnr) then
+      clear_tile_keymaps(t.owned_bufnr)
+    end
     if t.winid and vim.api.nvim_win_is_valid(t.winid) then
       pcall(vim.api.nvim_win_close, t.winid, true)
     end
@@ -178,24 +201,6 @@ function M.open()
 
   local sessions = session_mod.list()
 
-  local restore_list = {}
-  for _, s in ipairs(sessions) do
-    if s.bufnr and vim.api.nvim_buf_is_valid(s.bufnr) then
-      for _, win in ipairs(vim.api.nvim_list_wins()) do
-        if vim.api.nvim_win_get_buf(win) == s.bufnr then
-          table.insert(restore_list, { win = win, session = s })
-          local prev = s.prev_bufnr
-          if prev and vim.api.nvim_buf_is_valid(prev) then
-            pcall(vim.api.nvim_win_set_buf, win, prev)
-          else
-            local scratch = vim.api.nvim_create_buf(true, false)
-            pcall(vim.api.nvim_win_set_buf, win, scratch)
-          end
-        end
-      end
-    end
-  end
-
   local items = {}
   for _, s in ipairs(sessions) do
     table.insert(items, { key = s.name, name = s.name, session = s })
@@ -222,24 +227,20 @@ function M.open()
   vim.wo[bg_winid].winhl = "Normal:NormalFloat"
 
   local tiles = {}
-  local session_bufs = {}
   for i, item in ipairs(items) do
     local r = math.floor((i - 1) / cols)
     local c = (i - 1) % cols
     local y = pad + r * (tile_h + pad)
     local x = pad + c * (tile_w + pad)
 
-    local bufnr, owned_bufnr
+    local bufnr = vim.api.nvim_create_buf(false, true)
+    vim.bo[bufnr].bufhidden = "wipe"
     if item.key == NEW_KEY then
-      bufnr = vim.api.nvim_create_buf(false, true)
-      vim.bo[bufnr].bufhidden = "wipe"
       local lines = new_tile_lines(tile_h - 2, tile_w - 2)
       vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
       vim.bo[bufnr].modifiable = false
-      owned_bufnr = bufnr
     else
-      bufnr = item.session.bufnr
-      table.insert(session_bufs, bufnr)
+      refresh_snapshot(bufnr, item.session)
     end
 
     local title = item.key == NEW_KEY and " + new " or (" " .. item.name .. " ")
@@ -253,18 +254,21 @@ function M.open()
     vim.wo[winid].cursorline = false
     vim.wo[winid].wrap = false
 
-    if item.key ~= NEW_KEY then
-      local line_count = vim.api.nvim_buf_line_count(bufnr)
-      pcall(vim.api.nvim_win_set_cursor, winid, { line_count, 0 })
-    end
-
     table.insert(tiles, {
       key = item.key, name = item.name, session = item.session,
-      bufnr = bufnr, owned_bufnr = owned_bufnr, winid = winid,
+      owned_bufnr = bufnr, winid = winid,
     })
 
     set_tile_keymaps(bufnr)
   end
+
+  local timer = vim.uv.new_timer()
+  timer:start(REFRESH_MS, REFRESH_MS, vim.schedule_wrap(function()
+    if not M._state then return end
+    for _, t in ipairs(M._state.tiles) do
+      if t.session then refresh_snapshot(t.owned_bufnr, t.session) end
+    end
+  end))
 
   M._state = {
     bg_winid = bg_winid,
@@ -273,8 +277,7 @@ function M.open()
     rows = rows,
     cols = cols,
     selected = 1,
-    session_bufs = session_bufs,
-    restore_list = restore_list,
+    timer = timer,
   }
 
   pcall(vim.api.nvim_set_current_win, tiles[1].winid)
