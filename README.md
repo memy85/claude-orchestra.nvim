@@ -2,6 +2,8 @@
 
 Orchestrate multiple Claude Code CLI sessions inside Neovim. Each session lives in its own terminal buffer, switchable through an expose-style grid view, with resumption of past sessions.
 
+![demo](docs/grid.gif)
+
 Requires Neovim 0.10+, the `claude` CLI on `$PATH`, and (optionally) [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for the resume-history picker.
 
 ## Install
