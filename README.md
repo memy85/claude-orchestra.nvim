@@ -4,24 +4,22 @@ Orchestrate multiple Claude Code CLI sessions inside Neovim. Each session lives 
 
 Requires Neovim 0.10+, the `claude` CLI on `$PATH`, and (optionally) [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) for the resume-history picker.
 
-## Install (packer)
+## Install
+
+With [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
-use {
-  "git@github.com:memy85/claude-orchestra.nvim.git",
+{
+  "memy85/claude-orchestra.nvim",
   config = function() require("claude-orchestra").setup({}) end,
 }
 ```
 
-The repo is private — packer needs an SSH URL (the short `"memy85/claude-orchestra.nvim"` form uses HTTPS and will fail on headless servers without a GitHub credential helper). Make sure the host has an SSH key registered with GitHub before running `:PackerSync`.
-
-For local development with a working copy at `~/projects/claude-orchestra.nvim`:
+With [packer.nvim](https://github.com/wbthomason/packer.nvim):
 
 ```lua
 use {
-  vim.fn.isdirectory(vim.fn.expand("~/projects/claude-orchestra.nvim")) == 1
-    and "~/projects/claude-orchestra.nvim"
-    or "git@github.com:memy85/claude-orchestra.nvim.git",
+  "memy85/claude-orchestra.nvim",
   config = function() require("claude-orchestra").setup({}) end,
 }
 ```
@@ -100,4 +98,10 @@ By default, only sessions whose recorded `cwd` matches Neovim's current working 
 
 ## Status
 
-Early-stage. Working: spawn, switch, cycle, picker preview, inline rename, resume from history. Not yet: cross-session merge, persistent named sessions across nvim restarts, custom telescope themes.
+Working: spawn, switch, cycle, expose-style grid, inline rename, kill, resume from on-disk history (with telescope picker). Not yet: persistent named sessions across nvim restarts, cross-session merge, custom telescope themes.
+
+Issues and PRs welcome.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
