@@ -5,7 +5,6 @@ M.defaults = {
   keymaps = {
     prefix = "<leader>c",
     new = "n",
-    toggle = "a",
     switch = "l",
     kill = "k",
     rename = "r",

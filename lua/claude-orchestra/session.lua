@@ -162,18 +162,6 @@ function M.create(name, opts)
   return session
 end
 
-function M.toggle(session)
-  session = session or M.last_active()
-  if not session then
-    return M.create(nil)
-  end
-  if M.is_visible(session) then
-    M.hide(session)
-  else
-    M.show(session)
-  end
-end
-
 function M.cycle(direction)
   if #M._order == 0 then
     vim.notify("claude-orchestra: no sessions", vim.log.levels.INFO)

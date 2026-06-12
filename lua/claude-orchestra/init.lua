@@ -20,8 +20,6 @@ function M.resume_all()
   require("claude-orchestra.telescope").pick_resume({ all = true })
 end
 
-function M.toggle() session.toggle() end
-
 function M.grid() require("claude-orchestra.grid").open() end
 
 function M.next() session.cycle(1) end
@@ -64,7 +62,6 @@ function M.setup(opts)
   end
 
   map(keys.new, function() M.new() end, "Claude: new session")
-  map(keys.toggle, M.toggle, "Claude: toggle session")
   map(keys.switch, function() M.switch() end, "Claude: switch session")
   map(keys.kill, function() M.kill() end, "Claude: kill session")
   map(keys.rename, function() M.rename() end, "Claude: rename current session")

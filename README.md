@@ -29,7 +29,6 @@ use {
 | Command | Description |
 |---------|-------------|
 | `:ClaudeNew [name]` | Spawn a new `claude` session in the current window. Optionally name it. |
-| `:ClaudeToggle` | Show/hide the last-active session. |
 | `:ClaudeGrid` | Open the expose-style grid of running sessions plus a `+ new` tile. |
 | `:ClaudeSwitch [name]` | Switch to a session by name. Without a name, opens the grid. |
 | `:ClaudeNext` / `:ClaudePrev` | Cycle to the next/previous session in creation order. |
@@ -45,7 +44,6 @@ All under the `<leader>c` prefix (mnemonic: **C**laude).
 | Keys | Action |
 |------|--------|
 | `<leader>cn` | new session |
-| `<leader>ca` | toggle the last-active session |
 | `<leader>cl` | open the grid (switch / spawn / kill / rename from there) |
 | `<leader>c]` / `<leader>c[` | next / previous session |
 | `<leader>cr` | rename active session |
@@ -77,7 +75,6 @@ require("claude-orchestra").setup({
   keymaps = {
     prefix = "<leader>c",
     new = "n",
-    toggle = "a",
     switch = "l",
     kill = "k",
     rename = "r",
