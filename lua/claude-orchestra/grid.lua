@@ -83,9 +83,17 @@ local function stop_timer()
   end
 end
 
+local function clear_resize_autocmd()
+  if M._state and M._state.resize_autocmd then
+    pcall(vim.api.nvim_del_autocmd, M._state.resize_autocmd)
+    M._state.resize_autocmd = nil
+  end
+end
+
 function M.close()
   if not M._state then return end
   stop_timer()
+  clear_resize_autocmd()
   for _, t in ipairs(M._state.tiles) do
     if t.owned_bufnr and vim.api.nvim_buf_is_valid(t.owned_bufnr) then
       clear_tile_keymaps(t.owned_bufnr)
@@ -270,6 +278,15 @@ function M.open()
     end
   end))
 
+  local resize_autocmd = vim.api.nvim_create_autocmd("VimResized", {
+    callback = function()
+      if not M._state then return end
+      vim.schedule(function()
+        if M._state then M.open() end
+      end)
+    end,
+  })
+
   M._state = {
     bg_winid = bg_winid,
     bg_bufnr = bg_bufnr,
@@ -278,6 +295,7 @@ function M.open()
     cols = cols,
     selected = 1,
     timer = timer,
+    resize_autocmd = resize_autocmd,
   }
 
   pcall(vim.api.nvim_set_current_win, tiles[1].winid)
