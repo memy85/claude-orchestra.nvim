@@ -118,6 +118,13 @@ function M.create(name, opts)
     vim.keymap.set(mode, "<S-ScrollWheelRight>", "<Nop>", { buffer = bufnr, silent = true })
   end
 
+  -- Shift+Enter -> insert newline in the claude prompt (Alt+Enter byte sequence).
+  -- nvim's terminal collapses <S-CR> to plain <CR> by default, which claude treats as submit.
+  vim.keymap.set("t", "<S-CR>", function()
+    local job = vim.b[bufnr].terminal_job_id
+    if job then pcall(vim.api.nvim_chan_send, job, "\27\r") end
+  end, { buffer = bufnr, silent = true })
+
   local cur_win = vim.api.nvim_get_current_win()
   local cur_buf = vim.api.nvim_win_get_buf(cur_win)
   local prev_bufnr = is_claude_buf(cur_buf) and nil or cur_buf
