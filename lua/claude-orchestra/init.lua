@@ -32,7 +32,7 @@ end
 
 function M.kill(name)
   if name and name ~= "" then return session.kill(name) end
-  local cur = vim.api.nvim_buf_get_name(0):match("^claude://(.+)$")
+  local cur = vim.b[0].claude_orchestra
   if cur then session.kill(cur) end
 end
 

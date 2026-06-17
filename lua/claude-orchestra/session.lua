@@ -21,7 +21,12 @@ end
 
 local function is_claude_buf(bufnr)
   if not (bufnr and vim.api.nvim_buf_is_valid(bufnr)) then return false end
-  return vim.api.nvim_buf_get_name(bufnr):match("^claude://") ~= nil
+  local ok, val = pcall(function() return vim.b[bufnr].claude_orchestra end)
+  return ok and val ~= nil
+end
+
+local function buf_display_name(name)
+  return "[claude:" .. name .. "]"
 end
 
 local function windows_showing(bufnr)
@@ -110,6 +115,7 @@ function M.create(name, opts)
 
   local bufnr = vim.api.nvim_create_buf(false, true)
   vim.bo[bufnr].bufhidden = "hide"
+  vim.b[bufnr].claude_orchestra = name
 
   for _, mode in ipairs({ "n", "i", "t", "v" }) do
     vim.keymap.set(mode, "<ScrollWheelLeft>", "<Nop>", { buffer = bufnr, silent = true })
@@ -160,7 +166,7 @@ function M.create(name, opts)
   table.insert(M._order, name)
   M._last_active = name
 
-  vim.api.nvim_buf_set_name(bufnr, "claude://" .. name)
+  vim.api.nvim_buf_set_name(bufnr, buf_display_name(name))
 
   if config.options.auto_insert then
     vim.schedule(function() vim.cmd("startinsert") end)
@@ -212,7 +218,10 @@ function M.rename(old, new)
     if n == old then M._order[i] = new break end
   end
   if M._last_active == old then M._last_active = new end
-  pcall(vim.api.nvim_buf_set_name, s.bufnr, "claude://" .. new)
+  if s.bufnr and vim.api.nvim_buf_is_valid(s.bufnr) then
+    vim.b[s.bufnr].claude_orchestra = new
+    pcall(vim.api.nvim_buf_set_name, s.bufnr, buf_display_name(new))
+  end
 end
 
 function M.kill(name, from_exit)
