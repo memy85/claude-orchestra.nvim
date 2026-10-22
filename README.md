@@ -74,6 +74,7 @@ Inside a Claude session you're in terminal-insert mode and most keymaps are swal
 require("claude-orchestra").setup({
   cmd = { "claude" },              -- command used to launch a session
   auto_insert = true,               -- enter terminal-insert mode after spawn/show
+  open_in = "buffer",               -- "buffer" (current window) or "tab" (one tabpage per session)
   keymaps = {
     prefix = "<leader>c",
     new = "n",
@@ -83,11 +84,25 @@ require("claude-orchestra").setup({
     next = "]",
     prev = "[",
     resume = "h",
+    tab_next = "<C-Tab>",           -- tab mode only, not prefixed
+    tab_prev = "<C-S-Tab>",
   },
 })
 ```
 
 Set any keymap field to `false` (or `""`) to disable just that binding.
+
+## Tab mode
+
+With `open_in = "tab"`, each session gets its own tabpage:
+
+- The tabline labels session tabs `claude:<name>`; other tabs show their file name.
+- `<C-Tab>` / `<C-S-Tab>` cycle through all tabs, and also work from inside a session's terminal.
+- Killing a session closes its tab; switching to a session jumps to its existing tab.
+
+## Session names follow `/rename`
+
+Each session is launched with a pinned `--session-id` and a `SessionStart` hook passed via `--settings` (your own settings files are untouched). The hook reports which conversation is live, so after `/rename`, `/resume`, or `/clear` inside Claude, the plugin reads the current transcript and renames the session — and its tab — to the conversation's title within about two seconds.
 
 ## Resume
 

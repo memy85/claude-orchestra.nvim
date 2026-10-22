@@ -13,7 +13,7 @@ function M.resume(id, name)
   local base = vim.deepcopy(config.options.cmd)
   table.insert(base, "--resume")
   table.insert(base, id)
-  return session.create(name, { cmd = base })
+  return session.create(name, { cmd = base, session_id = id })
 end
 
 function M.resume_all()
@@ -68,6 +68,17 @@ function M.setup(opts)
   map(keys.next, M.next, "Claude: next session")
   map(keys.prev, M.prev, "Claude: previous session")
   map(keys.resume, function() M.resume() end, "Claude: resume previous session")
+
+  if config.options.open_in == "tab" then
+    local tabs = require("claude-orchestra.tabs")
+    vim.o.tabline = "%!v:lua.require'claude-orchestra.tabs'.tabline()"
+    for key, dir in pairs({ [keys.tab_next] = 1, [keys.tab_prev] = -1 }) do
+      if key and key ~= "" then
+        vim.keymap.set({ "n", "t" }, key, function() tabs.cycle(dir) end,
+          { desc = "Claude: cycle tabs", silent = true })
+      end
+    end
+  end
 end
 
 return M

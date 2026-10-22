@@ -11,8 +11,11 @@ M.defaults = {
     next = "]",
     prev = "[",
     resume = "h",
+    tab_next = "<C-Tab>",   -- tab mode only; works in normal + terminal mode
+    tab_prev = "<C-S-Tab>",
   },
   auto_insert = true,
+  open_in = "buffer", -- "buffer" (current window) or "tab" (one tabpage per session)
 }
 
 M.options = vim.deepcopy(M.defaults)
