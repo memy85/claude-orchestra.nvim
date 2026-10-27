@@ -46,6 +46,9 @@ local function extract_text(content)
   return nil
 end
 
+-- A /rename can land anywhere in the transcript, so scan every line for
+-- custom-title records (cheap substring check, decode only on a hit) and
+-- keep the latest. The first-user-message fallback only needs the head.
 local function session_summary(path)
   local f = io.open(path, "r")
   if not f then return "" end
@@ -53,19 +56,20 @@ local function session_summary(path)
   local count = 0
   for line in f:lines() do
     count = count + 1
-    if count > 500 then break end
-    local ok, obj = pcall(vim.json.decode, line)
-    if ok and obj then
-      if obj.type == "custom-title" and obj.customTitle and obj.customTitle ~= "" then
+    if line:find('"custom-title"', 1, true) then
+      local ok, obj = pcall(vim.json.decode, line)
+      if ok and obj and obj.type == "custom-title" and obj.customTitle and obj.customTitle ~= "" then
         custom_title = obj.customTitle
-      elseif (not first_real) and obj.type == "user" and obj.message and not obj.isMeta then
+      end
+    elseif not first_real and count <= 500 then
+      local ok, obj = pcall(vim.json.decode, line)
+      if ok and obj and obj.type == "user" and obj.message and not obj.isMeta then
         local text = extract_text(obj.message.content)
         if text and not looks_like_meta(text) then
           first_real = (text:gsub("%s+", " "):gsub("^%s+", ""))
         end
       end
     end
-    if custom_title and first_real then break end
   end
   f:close()
   return custom_title or first_real or ""
