@@ -24,7 +24,7 @@ use {
 }
 ```
 
-To pin a release, add `tag = "v0.3.0"` (packer) or `version = "v0.3.0"` (lazy.nvim). See [Releases](https://github.com/memy85/claude-orchestra.nvim/releases) for the changelog.
+To pin a release, add `tag = "v0.4.0"` (packer) or `version = "v0.4.0"` (lazy.nvim). See [Releases](https://github.com/memy85/claude-orchestra.nvim/releases) for the changelog.
 
 ## Commands
 
