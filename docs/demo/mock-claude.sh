@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stand-in for the `claude` CLI used by docs/demo/grid.tape.
+# Stand-in for the `claude` CLI used by docs/demo/screenshots.tape.
 # Picks one of three fake transcripts at random so the three demo
 # tiles look distinct from each other.
 

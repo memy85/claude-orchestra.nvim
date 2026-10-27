@@ -161,7 +161,6 @@ function M.open(select)
     width = list_w, height = height, row = row, col = col,
     style = "minimal", border = "rounded",
     title = " claude sessions ", title_pos = "center",
-    footer = " <CR> open  n new  r rename  x kill  q close ", footer_pos = "center",
     zindex = 50,
   })
   vim.wo[list_winid].cursorline = true
@@ -175,6 +174,7 @@ function M.open(select)
     width = preview_w, height = height, row = row, col = col + list_w + 2,
     style = "minimal", border = "rounded",
     title = " preview ", title_pos = "center",
+    footer = " <CR> open  n new  r rename  x kill  q close ", footer_pos = "center",
     zindex = 50, focusable = false,
   })
   vim.wo[preview_winid].wrap = false

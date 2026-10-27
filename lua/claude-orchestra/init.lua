@@ -20,7 +20,6 @@ function M.resume_all()
   require("claude-orchestra.telescope").pick_resume({ all = true })
 end
 
-function M.grid() require("claude-orchestra.grid").open() end
 function M.list() require("claude-orchestra.list").open() end
 
 function M.next() session.cycle(1) end
@@ -28,7 +27,7 @@ function M.prev() session.cycle(-1) end
 
 function M.switch(name)
   if name and name ~= "" then return session.switch(name) end
-  if config.options.switch_view == "grid" then M.grid() else M.list() end
+  M.list()
 end
 
 function M.kill(name)

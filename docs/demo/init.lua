@@ -1,4 +1,4 @@
--- Minimal nvim config used by docs/demo/grid.tape.
+-- Minimal nvim config used by docs/demo/screenshots.tape.
 -- Launches via `nvim --noplugin -u init.lua` so no other plugins load.
 -- The tape exports CO_DEMO_DIR and CO_REPO_ROOT before launching.
 
@@ -15,11 +15,19 @@ local demo_dir = assert(os.getenv("CO_DEMO_DIR"), "CO_DEMO_DIR not set")
 local repo_root = assert(os.getenv("CO_REPO_ROOT"), "CO_REPO_ROOT not set")
 vim.opt.runtimepath:prepend(repo_root)
 
+-- Optional: telescope + plenary for the resume-picker screenshot.
+local plugins = os.getenv("CO_PLUGIN_DIR")
+if plugins then
+  vim.opt.runtimepath:append(plugins .. "/plenary.nvim")
+  vim.opt.runtimepath:append(plugins .. "/telescope.nvim")
+end
+
 vim.cmd("runtime! plugin/claude-orchestra.lua")
 
 vim.keymap.set("t", "<Esc>", [[<C-\><C-n>]], { silent = true })
 
 require("claude-orchestra").setup({
   cmd = { demo_dir .. "/mock-claude.sh" },
-  auto_insert = true,
+  auto_insert = os.getenv("CO_AUTO_INSERT") ~= "0",
+  open_in = os.getenv("CO_OPEN_IN") or "buffer",
 })
