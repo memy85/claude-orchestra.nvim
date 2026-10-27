@@ -31,8 +31,9 @@ use {
 | Command | Description |
 |---------|-------------|
 | `:ClaudeNew [name]` | Spawn a new `claude` session in the current window. Optionally name it. |
+| `:ClaudeList` | Open the session list with a live preview of the highlighted session. |
 | `:ClaudeGrid` | Open the expose-style grid of running sessions plus a `+ new` tile. |
-| `:ClaudeSwitch [name]` | Switch to a session by name. Without a name, opens the grid. |
+| `:ClaudeSwitch [name]` | Switch to a session by name. Without a name, opens the list (or the grid, per `switch_view`). |
 | `:ClaudeNext` / `:ClaudePrev` | Cycle to the next/previous session in creation order. |
 | `:ClaudeRename [name]` | Rename the active session. Prompts if no argument. |
 | `:ClaudeKill [name]` | Kill a session by name. Without a name, kills the session of the current buffer (no-op if not in a claude buffer). |
@@ -46,13 +47,24 @@ All under the `<leader>c` prefix (mnemonic: **C**laude).
 | Keys | Action |
 |------|--------|
 | `<leader>cn` | new session |
-| `<leader>cl` | open the grid (switch / spawn / kill / rename from there) |
+| `<leader>cl` | open the session list (switch / spawn / kill / rename from there) |
 | `<leader>c]` / `<leader>c[` | next / previous session |
 | `<leader>cr` | rename active session |
 | `<leader>ck` | kill the current claude session (or use `x`/`dd` inside the grid) |
 | `<leader>ch` | resume past session (history picker) |
 
-### Inside the grid
+### Inside the list
+
+| Keys | Action |
+|------|--------|
+| `j`/`k` or arrows | move between sessions; the right pane previews the highlighted one |
+| `<CR>` or `l` | switch to the highlighted session (or spawn one on `+ new session`) |
+| `n` | spawn a new session |
+| `x` or `dd` | kill the highlighted session, list refreshes |
+| `r` | rename the highlighted session |
+| `q` or `<Esc>` | dismiss the list |
+
+### Inside the grid (`:ClaudeGrid`)
 
 | Keys | Action |
 |------|--------|
@@ -75,6 +87,7 @@ require("claude-orchestra").setup({
   cmd = { "claude" },              -- command used to launch a session
   auto_insert = true,               -- enter terminal-insert mode after spawn/show
   open_in = "buffer",               -- "buffer" (current window) or "tab" (one tabpage per session)
+  switch_view = "list",             -- what <leader>cl opens: "list" or "grid"
   keymaps = {
     prefix = "<leader>c",
     new = "n",

@@ -21,13 +21,14 @@ function M.resume_all()
 end
 
 function M.grid() require("claude-orchestra.grid").open() end
+function M.list() require("claude-orchestra.list").open() end
 
 function M.next() session.cycle(1) end
 function M.prev() session.cycle(-1) end
 
 function M.switch(name)
   if name and name ~= "" then return session.switch(name) end
-  M.grid()
+  if config.options.switch_view == "grid" then M.grid() else M.list() end
 end
 
 function M.kill(name)

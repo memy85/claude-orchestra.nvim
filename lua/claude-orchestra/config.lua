@@ -16,6 +16,7 @@ M.defaults = {
   },
   auto_insert = true,
   open_in = "buffer", -- "buffer" (current window) or "tab" (one tabpage per session)
+  switch_view = "list",
 }
 
 M.options = vim.deepcopy(M.defaults)
